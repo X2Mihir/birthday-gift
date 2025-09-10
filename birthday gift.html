@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday, My Queen ❤️</title>
+    <!-- Use Tailwind CSS for rapid styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Confetti library for the birthday explosion -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.js"></script>
+    <style>
+        /* Custom styles for the animated background and animations */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: white;
+            background: linear-gradient(-45deg, #0c002b, #1a0845, #350f75, #673ab7);
+            background-size: 400% 400%;
+            animation: gradient-flow 15s ease infinite;
+            min-height: 100vh;
+        }
+
+        @keyframes gradient-flow {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Gift box animation */
+        .gift-box {
+            animation: pulse 2s infinite;
+            cursor: pointer;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Fireworks animation */
+        @keyframes firework {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
+        }
+
+        .firework {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ff0, #fff0);
+            animation: firework 1.5s ease-out infinite;
+        }
+
+        /* Spinning wheel animation */
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinning-wheel {
+            transition: transform 3s cubic-bezier(0.2, 0.9, 0.4, 1);
+        }
+    </style>
+</head>
+
+<body class="bg-blue-900 text-white min-h-screen flex items-center justify-center p-4">
+    <div id="app" class="text-center">
+        <!-- Content will be rendered here by JavaScript -->
+    </div>
+
+    <!-- Modal for messages instead of alerts -->
+    <div id="message-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-purple-900 border border-purple-700 p-8 rounded-xl shadow-lg w-full max-w-sm text-center">
+            <p id="modal-text" class="text-lg mb-4"></p>
+            <button onclick="closeModal()"
+                class="px-6 py-2 bg-pink-500 hover:bg-pink-600 rounded-full font-bold transition-transform transform hover:scale-105">
+                OK
+            </button>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Configuration ---
+        const herBirthday = new Date('2025-09-13T00:00:00'); // Updated to her actual birthday!
+        const yourName = "Your Name"; // TODO: Enter your name here!
+
+        // --- Game Data ---
+        const gameData = [
+            {
+                clue: "When did we first meet each other?",
+                answer: "23 may 2025",
+                memory: {
+                    text: "I'll never forget the time I called you 'didi'!",
+                }
+            },
+            {
+                clue: "What is the nickname you gave me?",
+                answer: "monkey",
+                memory: {
+                    text: "I love how that became our special nickname. It's our little secret.",
+                }
+            },
+            {
+                clue: "Which country do we both dream of visiting one day?",
+                answer: "switzerland",
+                memory: {
+                    text: "I can't wait to see the world with you. I know we'll get there one day.",
+                    image: "https://placehold.co/400x300/62d87e/FFFFFF?text=Future+Travel+Memory",
+                }
+            }
+        ];
+
+        // --- Wheel Messages ---
+        const loveWheelMessages = [
+            "You are my sunshine on a cloudy day.",
+            "My love for you grows with every passing moment.",
+            "You are the most beautiful person I know, inside and out.",
+            "Every day is an adventure with you.",
+            "Your smile is my favorite thing in the world.",
+            "I'm so lucky to have you in my life.",
+            "You make my heart skip a beat.",
+        ];
+
+        // --- Global State Variables ---
+        let appState = 'giftbox';
+        let countdownInterval;
+        let currentGameIndex = 0;
+        let isGameStarted = false;
+
+        const appContainer = document.getElementById('app');
+        const modal = document.getElementById('message-modal');
+        const modalText = document.getElementById('modal-text');
+
+        // --- Utility Functions ---
+        const showModal = (text) => {
+            modalText.innerText = text;
+            modal.classList.remove('hidden');
+        };
+
+        const closeModal = () => {
+            modal.classList.add('hidden');
+        };
+
+        const showConfetti = () => {
+            confetti({
+                particleCount: 150,
+                spread: 180,
+                origin: { y: 0.6 }
+            });
+        };
+
+        // --- Rendering Functions ---
+        const render = () => {
+            appContainer.innerHTML = '';
+            switch (appState) {
+                case 'giftbox':
+                    renderGiftBox();
+                    break;
+                case 'countdown':
+                    renderCountdown();
+                    break;
+                case 'game':
+                    renderGame();
+                    break;
+                case 'love-calculator':
+                    renderLoveCalculator();
+                    break;
+                case 'love-wheel':
+                    renderLoveWheel();
+                    break;
+                case 'final':
+                    renderFinalMessage();
+                    break;
+            }
+        };
+
+        const renderGiftBox = () => {
+            appContainer.innerHTML = `
+                <div class="flex flex-col items-center">
+                    <h1 class="text-3xl sm:text-4xl font-bold mb-8 text-center animate-fade-in-up">There's a special delivery for you.</h1>
+                    <div id="gift-box" onclick="unwrapGift()" class="gift-box w-64 h-64 md:w-80 md:h-80 relative flex items-center justify-center p-4">
+                         <span class="text-[12rem] md:text-[15rem] transition-transform transform hover:scale-110">🎁</span>
+                        <span class="absolute text-xl font-bold text-black" style="top: 50%; left: 50%; transform: translate(-50%, -50%);">Open for a Surprise</span>
+                    </div>
+                </div>
+            `;
+        };
+
+        const unwrapGift = () => {
+            document.getElementById('gift-box').classList.add('animate-slide-out');
+            setTimeout(() => {
+                appState = 'countdown';
+                render();
+            }, 500);
+        };
+
+        const renderCountdown = () => {
+            const now = new Date().getTime();
+            const distance = herBirthday - now;
+            const isBirthday = distance <= 0;
+
+            let countdownText = "It's your birthday! Happy Birthday! ❤️";
+            let buttonText = "Start the adventure!";
+            let buttonClasses = "bg-pink-600 hover:bg-pink-700";
+            let buttonOnClick = "startGame()";
+            let previewButton = "";
+
+            if (!isBirthday) {
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                countdownText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+                buttonText = "The adventure begins on Sep 13!";
+                buttonClasses = "bg-gray-600 opacity-50 cursor-not-allowed";
+                buttonOnClick = "";
+            } else {
+                showConfetti();
+            }
+
+            appContainer.innerHTML = `
+                <div class="flex flex-col items-center">
+                    <h1 class="text-3xl md:text-5xl font-bold mb-8 text-center">Your birthday is almost here!</h1>
+                    <div id="countdown" class="text-4xl md:text-6xl font-extrabold text-pink-400">
+                        ${countdownText}
+                    </div>
+                    <button onclick="${buttonOnClick}" class="mt-10 px-6 py-3 rounded-full text-white font-bold text-lg shadow-lg transition-transform transform hover:scale-105 ${buttonClasses}">
+                        ${buttonText}
+                    </button>
+                    ${previewButton}
+                </div>
+            `;
+
+            if (!isBirthday) {
+                countdownInterval = setInterval(() => {
+                    const now = new Date().getTime();
+                    const distance = herBirthday - now;
+
+                    if (distance < 0) {
+                        clearInterval(countdownInterval);
+                        showConfetti();
+                        appState = 'final';
+                        render();
+                        return;
+                    }
+
+                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    document.getElementById("countdown").innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+                }, 1000);
+            }
+        };
+
+        const startGame = () => {
+            clearInterval(countdownInterval);
+            isGameStarted = true;
+            appState = 'game';
+            render();
+        };
+
+        const previewGame = () => {
+            clearInterval(countdownInterval);
+            isGameStarted = true;
+            appState = 'game';
+            render();
+        };
+
+        const renderGame = () => {
+            const currentClue = gameData[currentGameIndex];
+            if (!currentClue) {
+                // Game finished, go to the next stage
+                renderInteractiveSurprises();
+                return;
+            }
+
+            appContainer.innerHTML = `
+                <div class="flex flex-col items-center p-4">
+                    <h1 class="text-3xl md:text-4xl font-bold mb-6 text-center">A Royal Quest Awaits!</h1>
+                    <div class="bg-purple-900 bg-opacity-70 p-6 rounded-xl shadow-lg w-full max-w-lg mb-6 text-center">
+                        <p class="text-lg md:text-xl italic mb-4">"${currentClue.clue}"</p>
+                        <input type="text" id="answer-input" placeholder="Type your answer here..." class="w-full px-4 py-2 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                        <button onclick="checkAnswer()" class="mt-4 px-6 py-2 bg-pink-600 hover:bg-pink-700 rounded-full font-bold transition-transform transform hover:scale-105">
+                            Submit
+                        </button>
+                    </div>
+                    <div id="memory-container" class="w-full max-w-lg"></div>
+                </div>
+            `;
+        };
+
+        const checkAnswer = () => {
+            const input = document.getElementById('answer-input').value.trim().toLowerCase();
+            const clue = gameData[currentGameIndex];
+            const memoryContainer = document.getElementById('memory-container');
+
+            if (input === clue.answer.trim().toLowerCase()) {
+                memoryContainer.innerHTML = `
+                    <div class="bg-purple-800 bg-opacity-80 p-6 rounded-xl shadow-lg animate-fade-in">
+                        <h2 class="text-2xl font-bold mb-4">Memory Unlocked!</h2>
+                        <p class="text-lg mb-4">${clue.memory.text}</p>
+                        <button onclick="nextClue()" class="px-6 py-2 bg-pink-600 hover:bg-pink-700 rounded-full font-bold transition-transform transform hover:scale-105">
+                            Next Clue
+                        </button>
+                    </div>
+                `;
+            } else {
+                showModal("That's not quite right. Try again!");
+            }
+        };
+
+        const nextClue = () => {
+            currentGameIndex++;
+            renderGame();
+        };
+
+        const renderInteractiveSurprises = () => {
+            appContainer.innerHTML = `
+                <div class="flex flex-col items-center">
+                    <h1 class="text-3xl md:text-4xl font-bold mb-8 text-center">Surprise! More Fun Awaits!</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl">
+                        <!-- Love Calculator Card -->
+                        <div onclick="goToLoveCalculator()" class="bg-purple-900 p-8 rounded-xl shadow-lg cursor-pointer transition-transform transform hover:scale-105 hover:bg-purple-800">
+                            <h2 class="text-2xl font-bold mb-4">💖 Love Calculator</h2>
+                            <p>See how much we're meant to be!</p>
+                        </div>
+
+                        <!-- Spin the Wheel Card -->
+                        <div onclick="goToLoveWheel()" class="bg-purple-900 p-8 rounded-xl shadow-lg cursor-pointer transition-transform transform hover:scale-105 hover:bg-purple-800">
+                            <h2 class="text-2xl font-bold mb-4">🎡 Spin the Wheel of Love</h2>
+                            <p>Get a random sweet message!</p>
+                        </div>
+                    </div>
+                    <button onclick="renderFinalMessage()" class="mt-10 px-8 py-4 bg-pink-600 hover:bg-pink-700 rounded-full text-white font-bold text-xl shadow-lg transition-transform transform hover:scale-105">
+                        Claim Your Final Prize!
+                    </button>
+                </div>
+            `;
+        };
+
+        const goToLoveCalculator = () => {
+            appState = 'love-calculator';
+            render();
+        };
+
+        const goToLoveWheel = () => {
+            appState = 'love-wheel';
+            render();
+        };
+
+        const renderLoveCalculator = () => {
+            appContainer.innerHTML = `
+                <div class="flex flex-col items-center p-4">
+                    <h1 class="text-3xl md:text-4xl font-bold mb-6 text-center">💖 The Ultimate Love Calculator</h1>
+                    <div class="bg-purple-900 p-6 rounded-xl shadow-lg w-full max-w-md">
+                        <p class="mb-4 text-center">Enter your name, and let's see our compatibility!</p>
+                        <input type="text" id="her-name-input" placeholder="Your Name" class="w-full px-4 py-2 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-pink-500 mb-4">
+                        <button onclick="calculateLove()" class="w-full px-6 py-3 bg-pink-600 hover:bg-pink-700 rounded-full font-bold transition-transform transform hover:scale-105">
+                            Calculate Love
+                        </button>
+                        <div id="love-result" class="mt-6 text-2xl font-bold text-center"></div>
+                    </div>
+                    <button onclick="renderInteractiveSurprises()" class="mt-8 text-lg text-pink-400 hover:underline">
+                        Go Back
+                    </button>
+                </div>
+            `;
+        };
+
+        const calculateLove = () => {
+            const inputName = document.getElementById('her-name-input').value.trim().toLowerCase();
+            const resultDiv = document.getElementById('love-result');
+
+            if (inputName === 'ishqi') {
+                resultDiv.innerHTML = `You & Me = 100% Love! ❤️`;
+            } else {
+                resultDiv.innerHTML = `You & Me = 0% Love. 💔`;
+            }
+        };
+
+        const renderLoveWheel = () => {
+            appContainer.innerHTML = `
+                <div class="flex flex-col items-center p-4">
+                    <h1 class="text-3xl md:text-4xl font-bold mb-6 text-center">🎡 Spin the Wheel of Love</h1>
+                    <div class="bg-purple-900 p-8 rounded-xl shadow-lg w-full max-w-lg text-center">
+                        <div id="wheel-container" class="relative w-72 h-72 md:w-96 md:h-96 mx-auto mb-6">
+                            <img src="https://placehold.co/400x400/805ad5/FFFFFF?text=Spin+Wheel" alt="Spinning wheel" class="w-full h-full rounded-full">
+                        </div>
+                        <p id="wheel-message" class="text-xl italic h-10 mb-4">Click "Spin" to reveal your message...</p>
+                        <button onclick="spinWheel()" class="px-6 py-3 bg-pink-600 hover:bg-pink-700 rounded-full font-bold transition-transform transform hover:scale-105">
+                            Spin
+                        </button>
+                    </div>
+                    <button onclick="renderInteractiveSurprises()" class="mt-8 text-lg text-pink-400 hover:underline">
+                        Go Back
+                    </button>
+                </div>
+            `;
+        };
+
+        const spinWheel = () => {
+            const wheelMessage = document.getElementById('wheel-message');
+            const randomIndex = Math.floor(Math.random() * loveWheelMessages.length);
+            wheelMessage.innerText = "Spinning...";
+
+            setTimeout(() => {
+                wheelMessage.innerText = loveWheelMessages[randomIndex];
+            }, 2000);
+        };
+
+        const renderFinalMessage = () => {
+            appContainer.innerHTML = `
+                <div class="fireworks-container relative w-full h-screen flex flex-col items-center justify-center">
+                    <div class="absolute inset-0 z-0">
+                        <canvas id="fireworks-canvas" class="w-full h-full"></canvas>
+                    </div>
+                    <div class="relative z-10 flex flex-col items-center">
+                        <h1 class="text-4xl md:text-6xl font-bold text-center text-pink-400 mb-4 animate-fade-in-up">
+                            Happy Birthday, My Queen ❤️
+                        </h1>
+                        <p class="text-lg md:text-2xl text-center">
+                            A royal love for the most incredible person I know.
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            // Fireworks with a simple library
+            const fireworks = new JS_FireWorks('fireworks-canvas');
+            fireworks.set
+        };
+
+        // A basic fireworks library from the internet, as per the instructions to use a library.
+        function JS_FireWorks(e) {
+            this.canvas = document.getElementById(e),
+            this.ctx = this.canvas.getContext("2d"),
+            this.rockets = [],
+            this.particles = [],
+            this.hue = 120,
+            this.timerTick = 0,
+            this.timerTotal = 50,
+            this.animationFrameId = null,
+            this.canvas.width = window.innerWidth,
+            this.canvas.height = window.innerHeight,
+            this.resize = () => (this.canvas.width = window.innerWidth, this.canvas.height = window.innerHeight),
+            this.random = (e, t) => Math.random() * (t - e) + e,
+            this.createFirework = () => {
+                const e = this.random(0, this.canvas.width), t = this.canvas.height,
+                    s = this.random(this.canvas.height / 2, 1.5 * this.canvas.height / 2),
+                    i = this.random(0.01, 0.03),
+                    a = Math.atan2(s - t, e - 0) * 180 / Math.PI,
+                    n = this.random(0, 360);
+                this.rockets.push({
+                    x: e,
+                    y: t,
+                    vx: 0,
+                    vy: 0,
+                    ax: Math.cos(a * Math.PI / 180) * i,
+                    ay: Math.sin(a * Math.PI / 180) * i,
+                    alpha: 1,
+                    hue: n,
+                    lightness: this.random(50, 60),
+                    target: s
+                })
+            },
+            this.createParticles = (e, t) => {
+                for (let s = 0; s < 100; s++) {
+                    const i = this.random(0, 360), a = this.random(2, 4);
+                    this.particles.push({
+                        x: e,
+                        y: t,
+                        vx: Math.cos(i * Math.PI / 180) * a,
+                        vy: Math.sin(i * Math.PI / 180) * a,
+                        alpha: 1,
+                        hue: i,
+                        lightness: this.random(50, 60),
+                        friction: 0.95
+                    })
+                }
+            },
+            this.update = () => {
+                this.ctx.fillStyle = "rgba(0, 0, 0, 0.1)",
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height),
+                this.rockets.forEach((e, t) => {
+                    e.vx += e.ax,
+                    e.vy += e.ay,
+                    e.x += e.vx,
+                    e.y += e.vy,
+                    e.alpha = 1 - (e.y / e.target),
+                    e.y <= e.target && (this.createParticles(e.x, e.y), this.rockets.splice(t, 1)),
+                    this.ctx.beginPath(),
+                    this.ctx.arc(e.x, e.y, 3, 0, 2 * Math.PI),
+                    this.ctx.fillStyle = `hsl(${e.hue}, 100%, ${e.lightness}%)`,
+                    this.ctx.fill(),
+                    this.ctx.closePath()
+                }),
+                this.particles.forEach((e, t) => {
+                    e.x += e.vx,
+                    e.y += e.vy,
+                    e.vy += 0.05,
+                    e.vx *= e.friction,
+                    e.vy *= e.friction,
+                    e.alpha -= 0.01,
+                    e.alpha <= 0 && this.particles.splice(t, 1),
+                    this.ctx.beginPath(),
+                    this.ctx.arc(e.x, e.y, 1.5, 0, 2 * Math.PI),
+                    this.ctx.fillStyle = `hsla(${e.hue}, 100%, ${e.lightness}%, ${e.alpha})`,
+                    this.ctx.fill(),
+                    this.ctx.closePath()
+                })
+            },
+            this.animate = () => {
+                this.animationFrameId = window.requestAnimationFrame(this.animate),
+                this.timerTick++,
+                this.timerTick >= this.timerTotal && (this.createFirework(), this.timerTick = 0),
+                this.update()
+            },
+            this.stop = () => window.cancelAnimationFrame(this.animationFrameId),
+            this.set = () => {
+                window.addEventListener("resize", this.resize),
+                this.animate()
+            }
+        }
+
+        // Initial render on page load
+        window.onload = () => {
+            render();
+        };
+
+    </script>
+</body>
+</html>
